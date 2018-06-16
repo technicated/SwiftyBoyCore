@@ -1,3 +1,10 @@
+//
+//  Flags.swift
+//  SwiftyBoyCore
+//
+//  Created by technicated
+//
+
 struct Flags: OptionSet {
  
     static let empty: Flags = Flags(rawValue: 0x00)
@@ -8,7 +15,9 @@ struct Flags: OptionSet {
     static let halfCarry: Flags = Flags(rawValue: 0x20)
     static let carry: Flags     = Flags(rawValue: 0x10)
     
+    
     let rawValue: UInt8
+    
     
     init(rawValue: UInt8) {
         self.rawValue = rawValue & Flags.mask
@@ -20,6 +29,11 @@ extension Flags: ExpressibleByIntegerLiteral {
     
     init(integerLiteral: UInt8) {
         self.rawValue = integerLiteral & Flags.mask
+    }
+    
+    
+    func `if`(_ condition: Bool) -> Flags {
+        return condition ? self: .empty
     }
     
 }

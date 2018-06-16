@@ -1,3 +1,10 @@
+//
+//  Utils.swift
+//  SwiftyBoyCore
+//
+//  Created by technicated
+//
+
 // https://johnnylee-sde.github.io/Fast-unsigned-integer-to-hex-string/
 //
 private func hex<I: FixedWidthInteger>(_ value: I, output buffer: UnsafeMutablePointer<UInt8>) {
@@ -33,10 +40,22 @@ func hex(_ value: UInt16) -> String {
 
 extension UInt16 {
     
+    static postfix func ++(lhs: inout UInt16) -> UInt16 {
+        defer { lhs = lhs &+ 1 }
+        return lhs
+    }
+    
+    static postfix func --(lhs: inout UInt16) -> UInt16 {
+        defer { lhs = lhs &- 1 }
+        return lhs
+    }
+   
+    
     var hi: UInt8 { return UInt8(self >> 8) }
     
     var lo: UInt8 { return UInt8(self & 0x00FF) }
 
+    
     init(hi: UInt8, lo: UInt8) {
         self = UInt16(hi) << 8 | UInt16(lo)
     }

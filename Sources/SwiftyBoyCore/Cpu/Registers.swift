@@ -1,3 +1,10 @@
+//
+//  Registers.swift
+//  SwiftyBoyCore
+//
+//  Created by technicated
+//
+
 struct Registers {
 
     var a: UInt8 = 0x00
