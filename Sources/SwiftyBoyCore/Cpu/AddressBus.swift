@@ -7,6 +7,8 @@
 
 struct AddressBus {
  
+    private var display: Display = Display()
+    
     private var vram: [UInt8] = .init(repeating: 0, count: 0x2000)
     private var wram: [UInt8] = .init(repeating: 0, count: 0x2000)
     private var oam: [UInt8] = .init(repeating: 0, count: 0xA0)
@@ -29,7 +31,14 @@ extension AddressBus {
             case 0xE000 ... 0xFDFF: return wram[Int(index - 0xE000)]
             case 0xFE00 ... 0xFE9F: return oam[Int(index - 0xFE00)]
             case 0xFEA0 ... 0xFEFF: return 0x00
-            case 0xFF00 ... 0xFF7F: fatalError("Not implemented")
+
+            case 0xFF40: return display.lcdc
+            case 0xFF41: return display.stat
+            case 0xFF42: return display.scy
+            case 0xFF43: return display.scx
+            case 0xFF44: return display.ly
+            case 0xFF45: return display.lyc
+                
             case 0xFF80 ... 0xFFFE: return hram[Int(index - 0xFF80)]
             case 0xFFFF: fatalError("Not implemented")
             default: preconditionFailure()
@@ -48,7 +57,14 @@ extension AddressBus {
             case 0xE000 ... 0xFDFF: wram[Int(index - 0xE000)] = newValue
             case 0xFE00 ... 0xFE9F: oam[Int(index - 0xFE00)] = newValue
             case 0xFEA0 ... 0xFEFF: break
-            case 0xFF00 ... 0xFF7F: fatalError("Not implemented")
+                
+            case 0xFF40: display.lcdc = newValue
+            case 0xFF41: display.stat = newValue
+            case 0xFF42: display.scy = newValue
+            case 0xFF43: display.scx = newValue
+            case 0xFF44: display.ly = newValue
+            case 0xFF45: display.lyc = newValue
+                
             case 0xFF80 ... 0xFFFE: hram[Int(index - 0xFF80)] = newValue
             case 0xFFFF: fatalError("Not implemented")
             default: preconditionFailure()
