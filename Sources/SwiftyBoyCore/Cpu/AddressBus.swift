@@ -38,7 +38,10 @@ extension AddressBus {
             case 0xFF43: return display.scx
             case 0xFF44: return display.ly
             case 0xFF45: return display.lyc
-                
+            case 0xFF47: return display.bgp
+            case 0xFF48: return display.obp0
+            case 0xFF49: return display.obp1
+
             case 0xFF80 ... 0xFFFE: return hram[Int(index - 0xFF80)]
             case 0xFFFF: fatalError("Not implemented")
             default: preconditionFailure()
@@ -64,7 +67,10 @@ extension AddressBus {
             case 0xFF43: display.scx = newValue
             case 0xFF44: display.ly = newValue
             case 0xFF45: display.lyc = newValue
-                
+            case 0xFF47: display.bgp = newValue
+            case 0xFF48: display.obp0 = newValue
+            case 0xFF49: display.obp1 = newValue
+
             case 0xFF80 ... 0xFFFE: hram[Int(index - 0xFF80)] = newValue
             case 0xFFFF: fatalError("Not implemented")
             default: preconditionFailure()

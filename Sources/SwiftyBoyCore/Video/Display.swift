@@ -55,6 +55,27 @@ struct Display {
         get { return _dma }
         set { fatalError("Not implemented yet") }
     }
+   
+    private var _bgp: UInt8 = 0x00
+    
+    var bgp: UInt8 {
+        get { return _bgp }
+        set { _bgp = newValue }
+    }
+    
+    private var _obp0: UInt8 = 0x00
+    
+    var obp0: UInt8 {
+        get { return _obp0 }
+        set { _obp0 = newValue }
+    }
+    
+    private var _obp1: UInt8 = 0x00
+    
+    var obp1: UInt8 {
+        get { return _obp1 }
+        set { _obp1 = newValue }
+    }
     
     private var _wy: UInt8 = 0x00
     
