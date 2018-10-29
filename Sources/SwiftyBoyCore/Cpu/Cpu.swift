@@ -58,10 +58,10 @@ extension Cpu {
 
 extension Cpu {
     
-    mutating func execute() {
-        let opcode = nextImm8()
+    mutating func run() -> Int {
+        defer { bus.resetInstructionLength() }
         
-        switch opcode {
+        switch nextImm8() {
             
         case 0x00: nop()
         case 0x01: ld(Register16.bc, d16)
@@ -324,15 +324,15 @@ extension Cpu {
         case 0xFE: cp(d8)
         case 0xFF: rst(0x38)
             
-        default: fatalError("Unknown opcode \(hex(opcode))")
+        case let op: fatalError("Unknown opcode \(hex(op))")
             
         }
+        
+        return bus.instructionLengthInMachineCycles
     }
     
     private mutating func executeExtendedOperation() {
-        let opcode = nextImm8()
-        
-        switch opcode {
+        switch nextImm8() {
             
         case 0x00: rlc(Register8.b)
         case 0x01: rlc(Register8.c)
@@ -606,7 +606,7 @@ extension Cpu {
         case 0xFE: set(7, Memory.hl)
         case 0xFF: set(7, Register8.a)
             
-        default: fatalError("Unknown extended operation \(hex(opcode))")
+        case let op: fatalError("Unknown extended operation \(hex(op))")
             
         }
     }
@@ -634,6 +634,8 @@ private extension Cpu {
     }
     
     mutating func push<R>(_ src: R) where R: Readable16 {
+        bus.machineCycle()
+        
         let value = src.read(using: &self)
         bus[registers.sp &- 1] = value.hi
         bus[registers.sp &- 2] = value.lo
@@ -656,10 +658,13 @@ private extension Cpu {
             Flags.halfCarry.if((registers.sp & 0x000F) + (e & 0x000F) > 0x000F),
             Flags.carry.if((registers.sp & 0x00FF) + (e & 0x00FF) > 0x00FF)
         ]
+
+        bus.machineCycle()
     }
     
     mutating func ldsp() {
         registers.sp = registers.hl
+        bus.machineCycle()
     }
     
 }
@@ -838,6 +843,8 @@ private extension Cpu {
         let res = v &+ 1
         
         value.write(res, using: &self)
+
+        bus.machineCycle()
     }
     
     mutating func dec<V>(_ value: V) where V: Readable16 & Writable16 {
@@ -845,6 +852,8 @@ private extension Cpu {
         let res = v &- 1
         
         value.write(res, using: &self)
+
+        bus.machineCycle()
     }
     
     mutating func add<R>(_ src: R) where R: Readable16 {
@@ -858,6 +867,8 @@ private extension Cpu {
         ]
         
         registers.hl = res
+
+        bus.machineCycle()
     }
     
     mutating func addsp() {
@@ -870,6 +881,9 @@ private extension Cpu {
         ]
         
         registers.sp = res
+        
+        bus.machineCycle()
+        bus.machineCycle()
     }
     
 }
@@ -878,25 +892,38 @@ private extension Cpu {
 
 private extension Cpu {
     
+    mutating func jr(r8: UInt8) {
+        registers.pc = registers.pc &+ UInt16(bitPattern: Int16(Int8(bitPattern: r8)))
+        bus.machineCycle()
+    }
+    
+    mutating func jp(a16: UInt16) {
+        registers.pc = a16
+        bus.machineCycle()
+    }
+    
+}
+
+private extension Cpu {
+    
     mutating func jr() {
-        let r8 = UInt16(bitPattern: Int16(Int8(bitPattern: nextImm8())))
-        registers.pc = registers.pc &+ r8
+        jr(r8: nextImm8())
     }
     
     mutating func jr(_ condition: Condition) {
+        let r8 = nextImm8()
         guard condition.isTrue(using: registers.f) else { return }
-        
-        jr()
+        jr(r8: r8)
     }
     
     mutating func jp() {
-        registers.pc = nextImm16()
+        jp(a16: nextImm16())
     }
     
     mutating func jp(_ condition: Condition) {
+        let a16 = nextImm16()
         guard condition.isTrue(using: registers.f) else { return }
-        
-        jp()
+        jp(a16: a16)
     }
     
     mutating func jphl() {
@@ -909,17 +936,26 @@ private extension Cpu {
 
 private extension Cpu {
     
-    mutating func call() {
+    mutating func call(a16: UInt16) {
+        bus.machineCycle()
         bus[registers.sp &- 1] = registers.pc.hi
         bus[registers.sp &- 2] = registers.pc.lo
-        registers.pc = nextImm16()
+        registers.pc = a16
         registers.sp = registers.sp &- 2
     }
     
+}
+
+private extension Cpu {
+    
+    mutating func call() {
+        call(a16: nextImm16())
+    }
+    
     mutating func call(_ condition: Condition) {
+        let a16 = nextImm16()
         guard condition.isTrue(using: registers.f) else { return }
-        
-        call()
+        call(a16: a16)
     }
     
     mutating func ret() {
@@ -927,11 +963,12 @@ private extension Cpu {
         let hi = bus[registers.sp &+ 1]
         registers.pc = UInt16(hi: hi, lo: lo)
         registers.sp = registers.sp &+ 2
+        bus.machineCycle()
     }
     
     mutating func ret(_ condition: Condition) {
+        bus.machineCycle()
         guard condition.isTrue(using: registers.f) else { return }
-        
         ret()
     }
     
@@ -940,6 +977,7 @@ private extension Cpu {
     }
     
     mutating func rst(_ location: UInt8) {
+        bus.machineCycle()
         bus[registers.sp &- 1] = registers.pc.hi
         bus[registers.sp &- 2] = registers.pc.lo
         registers.pc = UInt16(hi: 0x00, lo: location)

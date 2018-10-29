@@ -101,7 +101,7 @@ private extension Display {
 
 extension Display {
     
-    func update() {
+    func tick() {
         guard self.isLcdEnabled else { return }
         
         // and now?
